@@ -3,7 +3,6 @@
 #include <cmath>
 #include <limits>
 #include <Magick++.h>
-#include <string>
 #include <fstream>
 
 double learning_rate;
@@ -35,6 +34,10 @@ void Neuron::resetOutput() {
     energy = std::numeric_limits<double>::quiet_NaN();
 }
 
+void NetworkInput::resetOutput() {
+    this->signal = 0;
+}
+
 void Neuron::addReceiver(Link & _l) {
     outputs.push_back(&_l);
 }
@@ -50,6 +53,12 @@ Neuron::Neuron(double shift): Neuron(){
 Neuron::Neuron() {
     resetOutput();
     resetError();
+}
+
+NetworkOutput::NetworkOutput(): Neuron() {
+}
+
+NetworkOutput::NetworkOutput(double x) : Neuron(x) {
 }
 
 void Neuron::resetError() {

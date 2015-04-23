@@ -1,6 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 #include <vector>
+#include <string>
 
 class Neuron;
 class Link;
@@ -63,21 +64,20 @@ class NetworkInput : public Producer {
         double signal;
     public:
         void setState(double);
-        double getSignal();
-        void addReceiver(Link &);
+        double getSignal() override;
+        void addReceiver(Link &) override;
+        virtual void resetOutput() override;
 };
 
 class NetworkOutput : public Neuron {
     private:
         double delta;
     public:
+        NetworkOutput();
+        NetworkOutput(double);
         double getState();
         void teach(double);
 };
-
-namespace std {
-    class string;
-}
 
 namespace Magick {
     class Image;
