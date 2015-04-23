@@ -27,14 +27,16 @@ private:
     Producer & source;
     Consumer & target;
 public:
+    Link(Producer&, Consumer&, double);
     Link(Producer&, Consumer&);
     double getSignal();
     double getError();
     void changeWeight();
+    double getWeight() const;
 };
 
 
-double learning_rate; 
+extern double learning_rate; 
 
 class Neuron : public Producer, public Consumer {
     protected:
@@ -42,9 +44,10 @@ class Neuron : public Producer, public Consumer {
         std::vector<Link*> inputs;
         std::vector<Link*> outputs;
     public:
+        Neuron();
+        Neuron(double);
         void calcEnergy();
         void calcError();
-        Neuron();
         void resetError();
         void resetOutput();
         double getError();
@@ -52,6 +55,7 @@ class Neuron : public Producer, public Consumer {
         virtual void addSource(Link&);
         virtual double getSignal();
         void changeShift();
+        double getShift() const;
 };
 
 class NetworkInput : public Producer {
@@ -71,7 +75,18 @@ class NetworkOutput : public Neuron {
         void teach(double);
 };
 
+namespace std {
+    class string;
+}
 
+namespace Magick {
+    class Image;
+}
+
+void readNetwork(const std::string & filename);
+void writeNetwork(const std::string & filename);
+void initializeNetwork();
+char runNetwork(Magick::Image&);
+void teachNetwork(Magick::Image&, char c);
 
 #endif
-
