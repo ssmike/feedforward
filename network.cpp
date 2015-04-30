@@ -4,6 +4,7 @@
 #include <limits>
 #include <Magick++.h>
 #include <fstream>
+#include "ThreadPool.h"
 
 double learning_rate;
 
@@ -257,17 +258,23 @@ char runNetwork(Magick::Image& image) {
             inputs[xsize * i + j].setState(color.intensity());
         }
     }
-    /*
-    for (int i = 0; i < hidden_layers_count; i++) {
-        for (int j = 0; j < hidden_layers_size; j++) {
-            hidden_layers[i][j].calcEnergy();
+    {
+        Thread_pool<void()> pool;
+        
+        for (int i = 0; i < hidden_layers_count; i++) {
+            std::vector<std::future<void()>> futures;
+            for (int j = 0; j < hidden_layers_size; j++) {
+                pool.submit(std::bind(&Neuron::calcEnergy, hidden_layers[i][j]));
+            }
+            for (auto & i: futures) {
+                i.get();
+            }
+        }
+        
+        for (int i = 0; i < outputs.size(); i++) {
+            outputs[i].calcEnergy();
         }
     }
-    
-    for (int i = 0; i < outputs.size(); i++) {
-        outputs[i].calcEnergy();
-    }
-    */
     int maxi = 0;
     for (int i = 0; i < outputs.size(); i++) {
         if (outputs[i].getSignal() > outputs[maxi].getSignal()) 
