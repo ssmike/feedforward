@@ -210,7 +210,7 @@ void readNetwork(const std::string & filename) {
 }
 
 void writeNetwork(const std::string & filename) {
-    std::ofstream os(filename);
+    std::ofstream os(filename);//, std::ios_base::binary);
     for (int i = 0; i < hidden_layers.size(); i++) {
         for (int j = 0; j < hidden_layers[i].size(); j++) {
             os << hidden_layers[i][j].getShift() << " ";
@@ -278,6 +278,8 @@ char runNetwork(Magick::Image& image) {
 
 void teachNetwork(Magick::Image& image, char c) {
     runNetwork(image);
+    for (int i = 0; i < 'z' - 'a'; i++)
+        outputs[i].teach(i == c - 'a');
     for (int i = 0; i < inp_links.size(); i++) {
         inp_links[i].changeWeight();  
     }
