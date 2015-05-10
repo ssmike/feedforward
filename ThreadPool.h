@@ -5,8 +5,10 @@
 #include <future>
 #include <cassert>
 #include <functional>
+#include <algorithm>
 
 #include "TSQueue.h"
+
 
 template<typename R>
 class Thread_pool {
@@ -23,12 +25,7 @@ public:
         }
     }
 
-    Thread_pool() {
-        unsigned int count_of_workers = std::thread::hardware_concurrency();
-        if(count_of_workers == 0) {
-            count_of_workers = 4;
-        }
-        ts_queue(count_of_workers);
+    Thread_pool(int count_of_workers = std::max((int)std::thread::hardware_concurrency(), 4)): ts_queue(count_of_workers){
         for (int worker = 0; worker < count_of_workers; ++worker) {
             workers.emplace_back(std::thread(std::bind(&Thread_pool::worker_fn, this)));
         }
