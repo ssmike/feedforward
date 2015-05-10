@@ -78,6 +78,7 @@ class NetworkOutput : public Neuron {
         NetworkOutput(double);
         double getState();
         void teach(double);
+        void changeShift();
 };
 
 namespace Magick {

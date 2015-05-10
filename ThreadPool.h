@@ -10,13 +10,11 @@
 #include "TSQueue.h"
 
 
-template<typename R>
 class Thread_pool {
 private:
-    using task_function = std::function<R()>;
-    using task_promise = std::promise<R>;
+    using task_function = std::function<void()>;
     std::vector<std::thread> workers;
-    Thread_safe_queue<std::pair<task_function, task_promise > > ts_queue;
+    Thread_safe_queue<task_function> ts_queue;
 
 public:
     Thread_pool(size_t count_of_workers): ts_queue(count_of_workers) {
@@ -25,39 +23,31 @@ public:
         }
     }
 
-    Thread_pool(int count_of_workers = std::max((int)std::thread::hardware_concurrency(), 4)): ts_queue(count_of_workers){
+    Thread_pool(): ts_queue(std::max((int)std::thread::hardware_concurrency(), 4)){
+        int count_of_workers = std::max((int)std::thread::hardware_concurrency(), 4);
         for (int worker = 0; worker < count_of_workers; ++worker) {
             workers.emplace_back(std::thread(std::bind(&Thread_pool::worker_fn, this)));
         }
     }
 
     void worker_fn() {
-        std::pair<task_function, task_promise > task;
+        task_function task;
         while (ts_queue.pop(task)) {
             try {
-                R result = task.first();
-                task.second.set_value(result);
-            } catch(std::exception&) {
-                task.second.set_exception(std::current_exception());
+                task();
+            } catch(std::exception& e) {
+                std::cerr << "multiprocessing error" << std::endl;
             }
 
         }
     }
 
-    std::future<R> try_submit(std::function<R()> new_task) {
-        std::promise<R> promise_for_task;
-        std::future<R> future_for_task = promise_for_task.get_future();
-        if (ts_queue.try_push(make_pair(new_task, std::move(promise_for_task)))) {
-            return  future_for_task;
-        }
-        return std::future<R>();
+    bool try_submit(std::function<void()> new_task) {
+        return ts_queue.try_push(new_task);
     }
 
-    std::future<R> submit(std::function<R()> new_task) {
-        std::promise<R> promise_for_task;
-        std::future<R> future_for_task = promise_for_task.get_future();
-        ts_queue.push(std::make_pair(new_task, std::move(promise_for_task)));
-        return future_for_task;
+    void submit(std::function<void()> new_task) {
+        ts_queue.push(new_task);
     }
 
     ~Thread_pool() {

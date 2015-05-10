@@ -8,11 +8,11 @@
 #include "ThreadPool.h"
 #include <iostream>
 
-double learning_rate = 0.03;
+double learning_rate = 0.7;
 
 namespace {
-    double init_link_lower_bound = -1;
-    double init_link_upper_bound = 1;
+    double init_link_lower_bound = -0.1;
+    double init_link_upper_bound = 0.1;
     double init_neuron_lower_bound = -0.1;
     double init_neuron_upper_bound = 0.1;
 
@@ -63,10 +63,16 @@ Neuron::Neuron() {
     resetError();
 }
 
+void NetworkOutput::changeShift() {
+    Neuron::changeShift();
+}
+
 NetworkOutput::NetworkOutput(): Neuron() {
+    //shift = 0;
 }
 
 NetworkOutput::NetworkOutput(double x) : Neuron(x) {
+   // shift = 0;
 }
 
 void Neuron::resetError() {
@@ -152,7 +158,7 @@ namespace {
     const int ysize = 20;
     const Magick::Geometry ImgGeometry("20x20!");
     const int hidden_layers_count = 1;
-    const int hidden_layers_size = 10000;
+    const int hidden_layers_size = 400;
     std::vector<NetworkInput*> inputs;
     std::vector<NetworkOutput*> outputs;
     std::vector<std::vector<Neuron*>> hidden_layers;
@@ -275,23 +281,20 @@ char runNetwork(Magick::Image& image) {
             inputs[xsize * i + j]->setState(color.shade());
         }
     }
-    /*{
-        Thread_pool<void> pool;
-        
+    {
+        Thread_pool pool;
         for (int i = 0; i < hidden_layers_count; i++) {
-            std::vector<std::future<void()>> futures;
             for (int j = 0; j < hidden_layers_size; j++) {
+                //std::cerr << i << "-" << j << std::endl;
                 pool.submit(std::bind(&Neuron::calcEnergy, hidden_layers[i][j]));
-            }
-            for (auto & i: futures) {
-                i.get();
             }
         }
         
         for (int i = 0; i < outputs.size(); i++) {
-            outputs[i].calcEnergy();
+            pool.submit(std::bind(&NetworkOutput::calcEnergy, outputs[i]));
         }
-    }*/
+    }
+
     int maxi = 0;
     for (int i = 0; i < outputs.size(); i++) {
         if (outputs[i]->getSignal() > outputs[maxi]->getSignal()) 
@@ -305,14 +308,25 @@ void teachNetwork(Magick::Image& image, char c) {
     double error = 0;
     do {
         step++;
-        std::cerr << runNetwork(image) << std::endl;
+        //std::cerr << runNetwork(image) << std::endl;
         error = 0;
         for (int i = 0; i < 'z' - 'a'; i++) {
             outputs[i]->teach(i == c - 'a');
             error += (outputs[i]->getSignal() - (i == c - 'a')) * (outputs[i]->getSignal() - (i == c - 'a'));
         }
-        std::cerr << std::endl;
-        if (error < 1e-7) break;
+
+
+        {
+            Thread_pool pool;
+            for (int i = hidden_layers_count - 1; i >= 0; i--) {
+                for (int j = 0; j < hidden_layers_size; j++) {
+                    pool.submit(std::bind(&Neuron::calcError, hidden_layers[i][j]));
+                }
+            }
+        }
+
+        //std::cerr << std::endl;
+        if (error < 1e-3) break;
         for (int i = 0; i < outp_links.size(); i++) {
             outp_links[i]->changeWeight();   
         }
@@ -332,8 +346,8 @@ void teachNetwork(Magick::Image& image, char c) {
         for (int i = 0; i < outputs.size(); i++) {
             outputs[i]->changeShift();
         }
-        std::cerr << error << std::endl;
-    } while (step < 10);
+        //std::cerr << error << std::endl;
+    } while (step < 40);
 }
 
 void prepareImage(Magick::Image & img) {

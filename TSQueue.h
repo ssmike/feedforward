@@ -55,6 +55,7 @@ public:
         not_empty_cond.wait(lock, [&]{return shutdown_called || !data_queue.empty();});
         if (data_queue.empty()) return false;
         new_val = std::move(data_queue.front());
+        not_full_cond.notify_one();
         data_queue.pop();
         return true;
     }

@@ -3,14 +3,22 @@
 #include <cstdio>
 #include <cstring>
 #include <ctype.h>
+#include <iostream>
+
+void teach(char * fname) {
+    int l = strlen(fname);
+    Magick::Image img(fname);
+    prepareImage(img);
+    teachNetwork(img, fname[l - 5]);
+}
+
 
 int main( int argc, char ** argv) {
     Magick::InitializeMagick(*argv);
-    Magick::Image img(argv[argc - 1]);
-    prepareImage(img);
     readNetwork("base");
-    int l = strlen(argv[argc - 1]);
-    teachNetwork(img, tolower(argv[argc - 1][l - 5]));
-    printf("%c--\n", runNetwork(img));
+    for (int i = 1; i < argc; i++) {
+        teach(argv[i]);
+        std::cout << argv[i] << std::endl;
+    }
     writeNetwork("base");
 }
