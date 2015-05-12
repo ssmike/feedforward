@@ -159,7 +159,7 @@ namespace {
     const int xsize = 20;
     const int ysize = 20;
     const Magick::Geometry ImgGeometry("20x20!");
-    const int hidden_layers_count = 3;
+    const int hidden_layers_count = 2;
     const int hidden_layers_size = 400;
     std::vector<NetworkInput*> inputs;
     std::vector<NetworkOutput*> outputs;
@@ -330,7 +330,7 @@ void teachNetwork(Magick::Image& image, char c) {
         }
 
         //std::cerr << error << std::endl;
-        if (error < 0.1) break;
+        if (error < 1e-3) break;
         for (int i = 0; i < outp_links.size(); i++) {
             outp_links[i]->changeWeight();   
         }
